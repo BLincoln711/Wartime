@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Command Center - Hendricks.AI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1.2rem;
+            color: #cccccc;
+            font-style: italic;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid #444;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #444;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        .table-container {
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #444;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            grid-column: 1 / -1;
+        }
+        
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .performance-table th {
+            background: #ffd700;
+            color: #000;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #444;
+        }
+        
+        .performance-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #444;
+            color: #ffffff;
+        }
+        
+        .performance-table tr:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .tier-elite { border-left: 4px solid #00ff00; }
+        .tier-strong { border-left: 4px solid #ffd700; }
+        .tier-weak { border-left: 4px solid #ff4444; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-elite { background: #00ff00; }
+        .status-strong { background: #ffd700; }
+        .status-weak { background: #ff4444; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(145deg, #ffd700, #ffed4e);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(145deg, #ffed4e, #ffd700);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+        
+        .law-quote {
+            background: linear-gradient(145deg, #1a1a3a, #0f0f23);
+            border-left: 4px solid #ffd700;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+            color: #cccccc;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .performance-table {
+                font-size: 0.9rem;
+            }
+            
+            .performance-table th,
+            .performance-table td {
+                padding: 8px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CAMPAIGN COMMAND CENTER</h1>
+        <div class="subtitle">Tactical Intelligence • April 13 - June 11, 2025</div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">$796K</div>
+            <div class="metric-label">Total Spend</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">730</div>
+            <div class="metric-label">Total Leads</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">$1,104</div>
+            <div class="metric-label">Avg Cost/Lead</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">84</div>
+            <div class="metric-label">Active Campaigns</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">79.2%</div>
+            <div class="metric-label">Top 20% Lead Share</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">13.3%</div>
+            <div class="metric-label">Click Share</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="chart-container">
+            <div class="chart-title">LEAD VOLUME DISTRIBUTION</div>
+            <canvas id="leadChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">COST EFFICIENCY ANALYSIS</div>
+            <canvas id="costChart"></canvas>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="chart-title">THE ELITE TIER - TOP 20% PERFORMERS</div>
+        <table class="performance-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Campaign</th>
+                    <th>Leads</th>
+                    <th>Spend</th>
+                    <th>Cost/Lead</th>
+                    <th>Opportunities</th>
+                    <th>Strategic Value</th>
+                </tr>
+            </thead>
+            <tbody id="campaignTable">
+                <!-- Data will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+
+
+    <div class="action-buttons">
+        <button class="btn" onclick="exportData()">Export Intel</button>
+        <button class="btn" onclick="optimizeCampaigns()">Execute Optimization</button>
+        <button class="btn" onclick="generateReport()">Strategic Report</button>
+    </div>
+
+    <script>
+        // Campaign data
+        const eliteCampaigns = [
+            {name: "BrandX Observability", leads: 97.24, spend: 91716.61, costPerLead: 943.17, opportunities: 22.30, tier: "elite"},
+            {name: "Monitor Observability", leads: 46.96, spend: 37994.57, costPerLead: 809.10, opportunities: 13.53, tier: "elite"},
+            {name: "IPAM EM NB MOFU", leads: 35.99, spend: 12124.78, costPerLead: 336.88, opportunities: 2.00, tier: "elite"},
+            {name: "NPM EM NB BOFU", leads: 33.89, spend: 24498.53, costPerLead: 722.84, opportunities: 2.50, tier: "elite"},
+            {name: "NPM SNMP Phrase", leads: 31.11, spend: 29508.82, costPerLead: 948.51, opportunities: 2.07, tier: "strong"},
+            {name: "NPM PM NB BOFU", leads: 27.23, spend: 11709.58, costPerLead: 430.10, opportunities: 0.00, tier: "strong"},
+            {name: "IPAM SNMP Exact", leads: 26.58, spend: 19419.87, costPerLead: 730.61, opportunities: 1.00, tier: "strong"},
+            {name: "SWO SNMP TRY", leads: 26.46, spend: 29278.32, costPerLead: 1106.54, opportunities: 7.50, tier: "strong"},
+            {name: "Software Observability", leads: 21.55, spend: 20235.78, costPerLead: 939.21, opportunities: 1.25, tier: "strong"},
+            {name: "NTA SNMP Phrase", leads: 21.76, spend: 28102.40, costPerLead: 1291.42, opportunities: 2.00, tier: "strong"},
+            {name: "Bandwidth SNMP", leads: 20.52, spend: 22392.04, costPerLead: 1091.03, opportunities: 1.00, tier: "strong"},
+            {name: "Pure Observability", leads: 18.46, spend: 19258.35, costPerLead: 1043.20, opportunities: 6.00, tier: "strong"},
+            {name: "NTA PM NB BOFU", leads: 18.81, spend: 42494.87, costPerLead: 2258.86, opportunities: 0.29, tier: "weak"},
+            {name: "NCM Observability", leads: 18.93, spend: 12076.35, costPerLead: 638.04, opportunities: 6.00, tier: "strong"},
+            {name: "ITSM TRY", leads: 16.64, spend: 42229.92, costPerLead: 2537.36, opportunities: 6.00, tier: "weak"},
+            {name: "HCO Network Monitoring", leads: 15.22, spend: 29538.68, costPerLead: 1940.51, opportunities: 4.50, tier: "weak"},
+            {name: "EMEA NPM EM NB", leads: 15.32, spend: 22787.29, costPerLead: 1487.16, opportunities: 0.70, tier: "weak"}
+        ];
+
+        // Populate campaign table
+        function populateTable() {
+            const tbody = document.getElementById('campaignTable');
+            tbody.innerHTML = '';
+            
+            eliteCampaigns.forEach(campaign => {
+                const row = tbody.insertRow();
+                row.className = `tier-${campaign.tier}`;
+                
+                row.innerHTML = `
+                    <td><span class="status-indicator status-${campaign.tier}"></span></td>
+                    <td>${campaign.name}</td>
+                    <td>${campaign.leads.toFixed(1)}</td>
+                    <td>$${campaign.spend.toLocaleString()}</td>
+                    <td>$${campaign.costPerLead.toFixed(0)}</td>
+                    <td>${campaign.opportunities.toFixed(1)}</td>
+                    <td>${campaign.tier.toUpperCase()}</td>
+                `;
+            });
+        }
+
+        // Lead Volume Chart
+        function createLeadChart() {
+            const ctx = document.getElementById('leadChart').getContext('2d');
+            const top5 = eliteCampaigns.slice(0, 5);
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: top5.map(c => c.name),
+                    datasets: [{
+                        data: top5.map(c => c.leads),
+                        backgroundColor: [
+                            '#FFD700',
+                            '#FF6B6B',
+                            '#4ECDC4',
+                            '#45B7D1',
+                            '#96CEB4'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#1a1a3a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                font: {size: 12}
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Cost Efficiency Chart
+        function createCostChart() {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            const top8 = eliteCampaigns.slice(0, 8);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top8.map(c => c.name.split(' ')[0]),
+                    datasets: [{
+                        label: 'Cost per Lead ($)',
+                        data: top8.map(c => c.costPerLead),
+                        backgroundColor: top8.map(c => 
+                            c.costPerLead < 800 ? '#00FF00' : 
+                            c.costPerLead < 1200 ? '#FFD700' : '#FF4444'
+                        ),
+                        borderWidth: 1,
+                        borderColor: '#1a1a3a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {color: '#ffffff'}
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {color: '#ffffff'},
+                            grid: {color: '#444'}
+                        },
+                        x: {
+                            ticks: {color: '#ffffff'},
+                            grid: {color: '#444'}
+                        }
+                    }
+                }
+            });
+        }
+
+        // Action functions
+        function exportData() {
+            alert('🎯 INTEL PACKAGE READY\n\nExporting battlefield data to CSV format.\nDeployment protocols activated.');
+        }
+
+        function optimizeCampaigns() {
+            alert('⚔️ OPTIMIZATION PROTOCOL INITIATED\n\n• Kill campaigns <2 leads/month\n• Double budget on <$800 cost/lead\n• Restructure geographic targeting\n\nExecute immediately?');
+        }
+
+        function generateReport() {
+            alert('📊 STRATEGIC REPORT GENERATING\n\n• Pareto analysis complete\n• Resource reallocation map\n• ROI optimization strategy\n\nReport ready for command review.');
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            populateTable();
+            createLeadChart();
+            createCostChart();
+        });
+    </script>
+</body>
+</html>
